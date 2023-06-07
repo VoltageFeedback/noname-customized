@@ -24,35 +24,51 @@ game.import('character', function (lib, game, ui, get, ai, _status) {
 				audio: 'canshi',
 				trigger: { player: 'phaseDrawBegin2' },
 				check: function (event, player) {
-					if (player.skipList.contains('phaseUse') ||
-						!player.countCards('h', function (card) {
-							return get.type(card, 'trick') == 'trick' && player.hasUseTarget(card);
-						})
-					) return true;
-					// TODO: add AI handcard check
-					return true;
+					const handcardTrickCount = player.countCards('h', function (card) {
+						return get.type(card, 'trick') == 'trick' && player.hasUseTarget(card);
+					});
+					// Always trigger if player skips phaseUse or has no usable trick cards in hand
+					if (player.skipList.contains('phaseUse') || !handcardTrickCount) return true;
+					// To check if player can avoid no handcards at end
+					const currentHandcardCount = player.countCards('h');
+					const drawCardCount = player.draw.num;
+					let extraDrawCardCount = game.countPlayer(function (current) {
+						if (player.hasZhuSkill('b_guiming') && current.group == 'wu' && current != player) return true;
+						return current.isDamaged() && current != player;
+					}) + 1;
+					let minGlobalHandcardCount = 0;
+					game.filterPlayer(function (target) {
+						if (target.isMinHandcard()) {
+							minGlobalHandcardCount = target.countCards('h');
+							return player != target;
+						}
+						return false;
+					});
+					if (currentHandcardCount == minGlobalHandcardCount+1) return true;
+					if ((currentHandcardCount+drawCardCount+extraDrawCardCount) - (2*handcardTrickCount-minGlobalHandcardCount-1) > 0) {
+						return true;
+					};
+					return false;
 				},
 				prompt: function (event, player) {
 					var num = game.countPlayer(function (current) {
-						if (player.hasZhuSkill('guiming') && current.group == 'wu' && current != player) return true;
+						if (player.hasZhuSkill('b_guiming') && current.group == 'wu' && current != player) return true;
 						return current.isDamaged() && current != player;
 					});
 					return '残蚀：是否多摸' + get.cnNumber(num + 1) + '张牌？';
 				},
 				prompt2: function (event, player) {
-					if (player.hasZhuSkill('guiming')) {
-						return '摸牌阶段开始时，你可以多摸X+1张牌（X为其他已受伤角色或其他吴势力角色），若如此做，当你于此回合内使用【杀】或普通锦囊牌时，你弃置一张牌。';
+					if (player.hasZhuSkill('b_guiming')) {
+						return '摸牌阶段开始时，你可以多摸X+1张牌（X为其他已受伤角色或其他吴势力角色），若如此做，当你于此回合内使用【杀】或普通锦囊牌时，若你手牌数不为全场最少之一，你弃置一张牌。';
 					}
 					return lib.translate['b_recanshi_info'];
 				},
 				content: function () {
 					var num = game.countPlayer(function (current) {
-						if (player.hasZhuSkill('guiming') && current.group == 'wu' && current != player) return true;
+						if (player.hasZhuSkill('b_guiming') && current.group == 'wu' && current != player) return true;
 						return current.isDamaged() && current != player;
 					});
-					if (num > 0) {
-						trigger.num += num + 1;
-					}
+					trigger.num += num + 1;
 					player.addTempSkill('b_recanshi2');
 				}
 			},
@@ -66,7 +82,7 @@ game.import('character', function (lib, game, ui, get, ai, _status) {
 				},
 				autodelay: true,
 				content: function () {
-					player.chooseToDiscard(true, 'he');
+					if (!player.isMinHandcard()) player.chooseToDiscard(true, 'he');
 				}
 			},
 			rechouhai: {
@@ -99,7 +115,7 @@ game.import('character', function (lib, game, ui, get, ai, _status) {
 			b_sunhao: '衡孙皓',
 			b_recanshi: '残蚀',
 			b_recanshi2: '残蚀',
-			b_recanshi_info: '摸牌阶段开始时，你可以多摸X+1张牌（X为其他已受伤角色数），若如此做，当你于此回合内使用【杀】或普通锦囊牌时，你弃置一张牌。',
+			b_recanshi_info: '摸牌阶段开始时，你可以多摸X+1张牌（X为其他已受伤角色数），若如此做，当你于此回合内使用【杀】或普通锦囊牌时，若你手牌数不为全场最少之一，你弃置一张牌。',
 			rechouhai: '仇海',
 			rechouhai_info: '锁定技，当你受到渠道为【杀】的伤害时，若你没有手牌，此伤害+1。',
 			b_guiming: '归命',
