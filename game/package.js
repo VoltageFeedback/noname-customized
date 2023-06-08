@@ -24,8 +24,8 @@ window.noname_package = {
 		swd: '轩辕剑',
 		gujian: '古剑奇谭',
 		xianjian: '仙剑奇侠传',
-		balance: '平衡',
-		dota2: '刀塔2',
+		"balance/index": '平衡',
+		"dota/index": '刀塔',
 	},
 	card: {
 		standard: '标准',

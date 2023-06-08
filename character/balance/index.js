@@ -1,7 +1,7 @@
 'use strict';
 game.import('character', function (lib, game, ui, get, ai, _status) {
 	return {
-		name: 'balance',
+		name: 'balance/index',
 		connect: true,
 		characterSort: {
 			sp: {
@@ -85,39 +85,40 @@ game.import('character', function (lib, game, ui, get, ai, _status) {
 					if (!player.isMinHandcard()) player.chooseToDiscard(true, 'he');
 				}
 			},
-			rechouhai: {
-				audio: 'chouhai',
-				trigger: { player: 'damageBegin3' },
-				forced: true,
-				check: function () {
-					return false;
-				},
-				filter: function (event, player) {
-					return event.card && event.card.name == 'sha' && player.countCards('h') == 0;
-				},
-				content: function () {
-					trigger.num++;
-				},
-				ai: {
-					effect: {
-						target: function (card, player, target, current) {
-							if (card.name == 'sha' && target.countCards('h') == 0) return [1, -2];
-						}
-					}
-				}
-			},
+			// rechouhai: {
+			// 	audio: 'chouhai',
+			// 	trigger: { player: 'damageBegin3' },
+			// 	forced: true,
+			// 	check: function () {
+			// 		return false;
+			// 	},
+			// 	filter: function (event, player) {
+			// 		return event.card && event.card.name == 'sha' && player.countCards('h') == 0;
+			// 	},
+			// 	content: function () {
+			// 		trigger.num++;
+			// 	},
+			// 	ai: {
+			// 		effect: {
+			// 			target: function (card, player, target, current) {
+			// 				if (card.name == 'sha' && target.countCards('h') == 0) return [1, -2];
+			// 			}
+			// 		}
+			// 	}
+			// },
 			b_guiming: {
 				unique: true,
 				zhuSkill: true,
 			},
 		},
 		translate: {
+			"balance/index": '平衡',
 			b_sunhao: '衡孙皓',
 			b_recanshi: '残蚀',
 			b_recanshi2: '残蚀',
 			b_recanshi_info: '摸牌阶段开始时，你可以多摸X+1张牌（X为其他已受伤角色数），若如此做，当你于此回合内使用【杀】或普通锦囊牌时，若你手牌数不为全场最少之一，你弃置一张牌。',
-			rechouhai: '仇海',
-			rechouhai_info: '锁定技，当你受到渠道为【杀】的伤害时，若你没有手牌，此伤害+1。',
+			// rechouhai: '仇海',
+			// rechouhai_info: '锁定技，当你受到渠道为【杀】的伤害时，若你没有手牌，此伤害+1。',
 			b_guiming: '归命',
 			b_guiming_info: '主公技，锁定技，你将残蚀描述中的“其他已受伤角色”改为“其他已受伤角色或其他吴势力角色”',
 
