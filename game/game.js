@@ -9231,6 +9231,7 @@
 					}
 					else {
 						script.src = path + '/' + file + ".js";
+						// script.type = 'module';
 					}
 					if (path.indexOf('http') == 0) {
 						script.src += '?rand=' + get.id();
@@ -30812,7 +30813,11 @@
 				}
 				var content2 = content(lib, game, ui, get, ai, _status);
 				if (content2.name) {
-					lib.imported[type][content2.name] = content2;
+					if (lib.imported[type][content2.name]) {
+
+					} else {
+						lib.imported[type][content2.name] = content2;
+					}
 					delete content2.name;
 				}
 			}
@@ -56006,5 +56011,6 @@
 		},
 		get: get
 	};
+	// The real launch command 
 	lib.init.init();
 }());
