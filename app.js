@@ -1,5 +1,6 @@
-const express = require('express');
-const path = require('path');
+import express from 'express';
+import path from 'path';
+import {fileURLToPath} from 'url';
 
 
 const app = express();
@@ -16,6 +17,9 @@ app.use('/image', express.static('image'));
 app.use('/layout', express.static('layout'));
 app.use('/mode', express.static('mode'));
 app.use('/theme', express.static('theme'));
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 app.get('/', function(request, response){
     response.sendFile(path.join(__dirname + '/index.html'));
 });
