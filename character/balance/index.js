@@ -1,11 +1,13 @@
 // 'use strict';
 import { b_sunhao } from './b_sunhao.js';
 import { b_huangyueying } from './b_huangyueying.js';
+import { b_dongzhuo } from './b_dongzhuo.js';
 
 
 const characterObjArray = [
 	b_sunhao, 
 	b_huangyueying,
+	b_dongzhuo,
 ];
 
 const characterPackageData = {
