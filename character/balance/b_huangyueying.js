@@ -14,12 +14,11 @@ const b_huangyueying = {
   },
   characterIntro: {},
   characterReplace: {
-    b_huangyueying: ['rehuangyueying', 'huangyueying'],
+    b_huangyueying: ['b_huangyueying', 'rehuangyueying', 'huangyueying'],
   },
   skill: {
     b_jizhi: {
       audio: 'rejizhi',
-      group: 'b_jizhi2',
       trigger: { player: ['phaseUseBegin', 'phaseUseEnd'] },
       frequent: false,
       check: function (event, player) {
@@ -50,22 +49,24 @@ const b_huangyueying = {
             player.gain(card, 'gain2', 'log');
           }
         }
-      }
-    },
-    b_jizhi2: {
-      audio: 'jizhi',
-      trigger: { player: 'useCard' },
-      frequent: true,
-      preHidden: true,
-      filter: function (event) {
-        return ((get.type(event.card) == 'trick' || get.type(event.card) == 'delay') && event.card.isCard);
       },
-      content: function () {
-        player.draw();
-      },
-      ai: {
-        threaten: 1.4,
-        noautowuxie: true,
+      group: ['b_jizhi_draw'],
+      subSkill: {
+        draw: {
+          audio: 'jizhi',
+          trigger: { player: 'useCard' },
+          frequent: true,
+          filter: function (event) {
+            return ((get.type(event.card) == 'trick' || get.type(event.card) == 'delay') && event.card.isCard);
+          },
+          content: function () {
+            player.draw();
+          },
+          ai: {
+            threaten: 1.4,
+            noautowuxie: true,
+          }
+        },
       }
     },
     b_qicai: {
@@ -90,11 +91,13 @@ const b_huangyueying = {
   translate: {
     b_huangyueying: '衡黄月英',
     b_jizhi: '集智',
-    b_jizhi_info: '①出牌阶段开始时，或出牌阶段结束时，你可以展示手牌：若没有锦囊牌，你获得牌堆或弃牌堆中随机一张锦囊牌并展示。②当你使用锦囊牌时，你可以摸一张牌。',
+    b_jizhi_info: '①出牌阶段开始时，或出牌阶段结束时，你可以展示手牌：若没有锦囊牌，\
+    你获得牌堆或弃牌堆中随机一张锦囊牌并展示。②当你使用锦囊牌时，你可以摸一张牌。',
     b_jizhi_faq: '【集智】检索顺序',
     b_jizhi_faq_info: '【集智】随机检索锦囊牌时，若牌堆中没有锦囊牌，才会从弃牌堆中获得。',
     b_qicai: '奇才',
-    b_qicai_info: '锁定技，你使用锦囊牌无距离限制。你装备区内的防具牌与宝物牌不能被其他角色弃置。你的手牌上限+X（X为你装备区内的防具牌与宝物牌之和）。',
+    b_qicai_info: '锁定技，①你使用锦囊牌无距离限制。②你装备区内的防具牌与宝物牌不能被其他角色弃置。\
+    ③你的手牌上限+X（X为你装备区内的防具牌与宝物牌之和）。',
   }
 };
 
