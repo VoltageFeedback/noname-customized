@@ -5129,13 +5129,13 @@ game.import('character',function(lib,game,ui,get,ai,_status){
 				},
 				content:function(){
 					"step 0"
-					player.chooseControl('baonue_hp','baonue_maxHp',function(event,player){
-						if(player.hp==player.maxHp) return 'baonue_hp';
-						if(player.hp<player.maxHp-1||player.hp<=2) return 'baonue_maxHp';
-						return 'baonue_hp';
+					player.chooseControl('benghuai_hp','benghuai_maxHp',function(event,player){
+						if(player.hp==player.maxHp) return 'benghuai_hp';
+						if(player.hp<player.maxHp-1||player.hp<=2) return 'benghuai_maxHp';
+						return 'benghuai_hp';
 					}).set('prompt','崩坏：失去1点体力或减1点体力上限');
 					"step 1"
-					if(result.control=='baonue_hp'){
+					if(result.control=='benghuai_hp'){
 						player.loseHp();
 					}
 					else{
