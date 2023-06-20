@@ -9,7 +9,7 @@ import { _status } from '/game/game.js';
 
 const b_dongzhuo = {
   character: {
-    b_dongzhuo: ['male', 'qun', 8, ['b_baolian', 'rejiuchi', 'b_benghuai', 'olbaonue'], ['zhu']],
+    b_dongzhuo: ['male', 'qun', '6/7', ['b_baolian', 'b_jiuchi', 'b_benghuai', 'olbaonue'], ['zhu']],
   },
   characterIntro: {},
   characterReplace: {
@@ -20,14 +20,24 @@ const b_dongzhuo = {
       audio: 'hengzheng',
       enable: 'phaseUse',
       usable: 1,
-      filterTarget: function (event, target, player) {
-        return target != player;
-      },
       selectTarget: -1,
       multitarget: true,
       multiline: true,
-      marktext: '敛',
-      intro: { name2: '敛', content: 'mark' },
+      marktext: '暴',
+      intro: { name2: '暴', content: 'mark' },
+      filterTarget: function (event, target, player) {
+        return target != player;
+      },
+      check: function (event, player) {
+        // 1. Player has the lowest maxHp and runs out of marks, false
+        const damageCount = game.countPlayer(function (current) {
+          if (get.attitude(current, player) < 0 && current.countDiscardableCards(current, 'he') >= 2) return true;
+        });
+        // 2. After damage, player is still healthy, true
+        // 3. After damage, player is in danger but with sufficient [Peach] and [Liquor], true
+
+        return false;
+      },
       content: function () {
         'step 0'
         if (player.hasMark('b_baolian')) {
@@ -43,11 +53,13 @@ const b_dongzhuo = {
           player.loseMaxHp(true);
         } else if (result.control == '弃置标记') {
           player.removeMark('b_baolian', 1);
-        } else {
+        }
+        'step 2'
+        if (player.isDead()) {
           event.finish();
           return;
         }
-        'step 2'
+        target.line(player);
         if (event.target.countCards('he') == 0) {
           player.draw();
           event.goto(4);
@@ -81,35 +93,112 @@ const b_dongzhuo = {
           event.goto(2);
         }
       },
-      group: ['b_baolian_addTag', 'b_baolian_addMark'],
+      ai: {
+        // threaten: 1.75,
+      },
+      group: ['b_baolian_addCounter', 'b_baolian_resetCounter', 'b_baolian_addMark'],
       subSkill: {
-        addTag: {
+        addCounter: {
           trigger: { player: 'changeHp', source: ['damageEnd'] },
-          frequent: true,
+          silent: true,
+          forced: true,
           content: function () {
             if (trigger.name == 'changeHp' && trigger.num >= 0) return;
 
-            if (typeof player.storage.b_baolianTagCount == 'undefined') {
-              player.storage.b_baolianTagCount = 0;
+            if (typeof player.storage.b_baolianCounter == 'undefined') {
+              player.storage.b_baolianCounter = 0;
             }
-            player.storage.b_baolianTagCount += Math.abs(trigger.num);
-            game.log('当前', '#g【暴敛】', '计数：', player.storage.b_baolianTagCount);
+            player.storage.b_baolianCounter += Math.abs(trigger.num);
+            game.log('当前', '#g【暴敛】', '计数：', player.storage.b_baolianCounter);
           },
+        },
+        resetCounter: {
+          trigger: { global: 'phaseAfter' },
+          forced: true,
+          silent: true,
+          priority: 0,
+          filter: function (event, player) {
+            return player.storage.b_baolianCounter > 0;
+          },
+          content: function () {
+            player.storage.b_baolianCounter = 0;
+          }
         },
         addMark: {
           trigger: { global: 'phaseAfter' },
-          frequent: true,
+          forced: true,
+          priority: 1,
+          filter: function (event, player) {
+            return player.storage.b_baolianCounter > 1;
+          },
           content: function () {
-            if (player.storage.b_baolianTagCount > 1) player.addMark('b_baolian', 1, true);
-            player.storage.b_baolianTagCount = 0;
+            player.addMark('b_baolian', 1, true);
           }
         }
       }
     },
+
+    b_jiuchi: {
+      audio: 'jiuchi',
+      audioname: ['re_dongzhuo'],
+      enable: 'chooseToUse',
+      filterCard: function (card) {
+        return get.suit(card) == 'spade';
+      },
+      viewAs: { name: 'jiu' },
+      viewAsFilter: function (player) {
+        if (!player.countCards('hse', { suit: 'spade' })) return false;
+        return true;
+      },
+      position: 'hes',
+      prompt: '将一张黑桃牌当【酒】使用',
+      check: function (card) {
+        if (_status.event.type == 'dying') return 1 / Math.max(0.1, get.value(card));
+        return 4 - get.value(card);
+      },
+      ai: {
+        threaten: 1.6,
+      },
+      group: ['b_jiuchi_recover', 'b_jiuchi_loseHp'],
+      subSkill: {
+        recover: {
+          trigger: { player: 'useCardToPlayered' },
+          forced: true,
+          popup: false,
+          audio: 'jiuchi',
+          filter: function (event, player) {
+            // event: 'useCardToPlayered'
+            return event.card && event.card.name == 'sha' && event.getParent().jiu &&
+            event.target.hp >= player.hp;
+          },
+          content: function () {
+            // event: 'b_jiuchi_recover'
+            player.logSkill('jiuchi');
+            player.recover(1);
+            player.addMark('b_jiuchi_loseHp', 1, true);
+          },
+        },
+        loseHp: {
+          shaRelated: true,
+          audio: 2,
+          trigger: { player: 'shaMiss' },
+          forced: true,
+          filter: function (event, player) {
+            return player.countMark('b_jiuchi_loseHp') > 0;
+          },
+          content: function () {
+            player.removeMark('b_jiuchi_loseHp', player.countMark('b_jiuchi_loseHp'), true);
+            player.loseHp();
+          }
+        },
+      }
+    },
+
     b_benghuai: {
       audio: 'benghuai',
       audioname: ['zhugedan', 're_dongzhuo', 'ol_dongzhuo'],
       trigger: { player: 'phaseJieshuBegin' },
+      locked: true,
       forced: true,
       check: function () {
         return false;
@@ -119,7 +208,8 @@ const b_dongzhuo = {
         game.filterPlayer(function (current) {
           minMaxHp = Math.min(minMaxHp, current.maxHp);
         });
-        return player.maxHp > minMaxHp && !player.hasSkill('rejiuchi_air') && !player.hasSkill('oljiuchi_air');
+        return !player.isMinHp() && player.maxHp > minMaxHp;
+        // && !player.hasSkill('rejiuchi_air') && !player.hasSkill('oljiuchi_air');
       },
       content: function () {
         "step 0"
@@ -146,10 +236,13 @@ const b_dongzhuo = {
     b_dongzhuo: '衡董卓',
     b_baolian: '暴敛',
     b_baolian_info: '①一名角色的回合结束时，若你本回合内造成伤害值与减少体力值之和大于等于2时，\
-    你获得一枚“敛”。②出牌阶段限一次，你可以弃置一枚“敛”或失去一点体力上限，令所有其他角色依次进行：\
+    你获得一枚“暴”。②出牌阶段限一次，你可以弃置一枚“暴”或失去一点体力上限，令所有其他角色依次进行：\
     若其没有牌，你摸一张牌；否则其需选择，弃置两张牌并对你造成1点伤害，或令你获得其一张牌。',
+    b_jiuchi: '酒池',
+    b_jiuchi_info: '你可以将一张黑桃牌当做【酒】使用。你使用带有【酒】效果的【杀】指定\
+    体力大于等于你的目标后，回复一点体力：若被【闪】抵消，你失去一点体力。',
     b_benghuai: '崩坏',
-    b_benghuai_info: '结束阶段，若你的体力上限不为全场最少之一，你须减1点体力或体力上限。',
+    b_benghuai_info: '结束阶段，若你的体力与体力上限都不为全场最少之一，你须减1点体力或体力上限。',
   }
 
 };
