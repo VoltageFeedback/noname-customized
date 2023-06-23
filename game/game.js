@@ -11296,6 +11296,13 @@ var lib = {
 				}
 				game.phaseNumber++;
 				player.phaseNumber++;
+
+				if (game.phaseArray.length < game.phaseNumber) {
+					game.phaseArray.push([player.name]);
+				} else {
+					game.phaseArray[game.phaseNumber - 1].push(player.name);
+				}
+
 				game.broadcastAll(function (player, player2, num, popup) {
 					if (lib.config.glow_phase) {
 						if (player2) player2.classList.remove('glow_phase');
@@ -16858,6 +16865,11 @@ var lib = {
 					game.log(player, '阵亡')
 				}
 
+				player.dieAt = {
+					roundNumber: game.roundNumber,
+					phaseCountInRound: game.phaseArray[game.phaseArray.length - 1].length,
+					playerCount: game.players.length,
+				};
 
 				// player.removeEquipTrigger();
 
@@ -34027,16 +34039,19 @@ var game = {
 			tr = document.createElement('tr');
 			tr.appendChild(document.createElement('td'));
 			td = document.createElement('td');
-			td.innerHTML = '伤害';
+			td.innerHTML = '回合';
 			tr.appendChild(td);
 			td = document.createElement('td');
-			td.innerHTML = '受伤';
+			td.innerHTML = '平均/总伤害';
 			tr.appendChild(td);
 			td = document.createElement('td');
-			td.innerHTML = '摸牌';
+			td.innerHTML = '平均/总受伤';
 			tr.appendChild(td);
 			td = document.createElement('td');
-			td.innerHTML = '出牌';
+			td.innerHTML = '平均/总摸牌';
+			tr.appendChild(td);
+			td = document.createElement('td');
+			td.innerHTML = '平均/总出牌';
 			tr.appendChild(td);
 			td = document.createElement('td');
 			td.innerHTML = '杀敌';
@@ -34048,39 +34063,49 @@ var game = {
 				td.innerHTML = get.translation(game.players[i]);
 				tr.appendChild(td);
 				td = document.createElement('td');
+				const stat = game.players[i].stat;
+				const phaseCountInFinalRound = game.phaseArray[game.phaseArray.length - 1].length;
+				let roundNumberDecimal = game.roundNumber - 1 +
+					phaseCountInFinalRound / Math.max(game.players.length + 1, phaseCountInFinalRound);
+				roundNumberDecimal = roundNumberDecimal >= 1 ? roundNumberDecimal : 1;
+				td.innerHTML = (game.roundNumber - 1).toString() + '+'
+					+ phaseCountInFinalRound.toString() + '/'
+					+ Math.max(game.players.length + 1, phaseCountInFinalRound).toString();
+				tr.appendChild(td);
+				td = document.createElement('td')
 				num = 0;
-				for (j = 0; j < game.players[i].stat.length; j++) {
-					if (game.players[i].stat[j].damage != undefined) num += game.players[i].stat[j].damage;
+				for (j = 0; j < stat.length; j++) {
+					if (stat[j].damage != undefined) num += stat[j].damage;
 				}
-				td.innerHTML = num;
+				td.innerHTML = (num / roundNumberDecimal).toFixed(2).toString() + ' / ' + num.toString();
 				tr.appendChild(td);
 				td = document.createElement('td');
 				num = 0;
-				for (j = 0; j < game.players[i].stat.length; j++) {
-					if (game.players[i].stat[j].damaged != undefined) num += game.players[i].stat[j].damaged;
+				for (j = 0; j < stat.length; j++) {
+					if (stat[j].damaged != undefined) num += stat[j].damaged;
 				}
-				td.innerHTML = num;
+				td.innerHTML = (num / roundNumberDecimal).toFixed(2).toString() + ' / ' + num.toString();
 				tr.appendChild(td);
 				td = document.createElement('td');
 				num = 0;
-				for (j = 0; j < game.players[i].stat.length; j++) {
-					if (game.players[i].stat[j].gain != undefined) num += game.players[i].stat[j].gain;
+				for (j = 0; j < stat.length; j++) {
+					if (stat[j].gain != undefined) num += stat[j].gain;
 				}
-				td.innerHTML = num;
+				td.innerHTML = (num / roundNumberDecimal).toFixed(2).toString() + ' / ' + num.toString();
 				tr.appendChild(td);
 				td = document.createElement('td');
 				num = 0;
-				for (j = 0; j < game.players[i].stat.length; j++) {
-					for (k in game.players[i].stat[j].card) {
-						num += game.players[i].stat[j].card[k];
+				for (j = 0; j < stat.length; j++) {
+					for (k in stat[j].card) {
+						num += stat[j].card[k];
 					}
 				}
-				td.innerHTML = num;
+				td.innerHTML = (num / roundNumberDecimal).toFixed(2).toString() + ' / ' + num.toString();
 				tr.appendChild(td);
 				td = document.createElement('td');
 				num = 0;
-				for (j = 0; j < game.players[i].stat.length; j++) {
-					if (game.players[i].stat[j].kill != undefined) num += game.players[i].stat[j].kill;
+				for (j = 0; j < stat.length; j++) {
+					if (stat[j].kill != undefined) num += stat[j].kill;
 				}
 				td.innerHTML = num;
 				tr.appendChild(td);
@@ -34096,16 +34121,19 @@ var game = {
 				tr = document.createElement('tr');
 				tr.appendChild(document.createElement('td'));
 				td = document.createElement('td');
-				td.innerHTML = '伤害';
+				td.innerHTML = '回合';
 				tr.appendChild(td);
 				td = document.createElement('td');
-				td.innerHTML = '受伤';
+				td.innerHTML = '平均/总伤害';
 				tr.appendChild(td);
 				td = document.createElement('td');
-				td.innerHTML = '摸牌';
+				td.innerHTML = '平均/总受伤';
 				tr.appendChild(td);
 				td = document.createElement('td');
-				td.innerHTML = '出牌';
+				td.innerHTML = '平均/总摸牌';
+				tr.appendChild(td);
+				td = document.createElement('td');
+				td.innerHTML = '平均/总出牌';
 				tr.appendChild(td);
 				td = document.createElement('td');
 				td.innerHTML = '杀敌';
@@ -34118,39 +34146,52 @@ var game = {
 				td.innerHTML = get.translation(game.dead[i]);
 				tr.appendChild(td);
 				td = document.createElement('td');
+				const phaseCountInDeadRound = game.dead[i].dieAt.phaseCountInRound;
+				const roundNumber = game.dead[i].dieAt.roundNumber;
+				const playerCount = game.dead[i].dieAt.playerCount;
+				// Math.max(playerCount, game.phaseArray[roundNumber - 1].length)
+				let roundNumberDecimal = roundNumber - 1 +
+					phaseCountInDeadRound / playerCount;
+				roundNumberDecimal = roundNumberDecimal >= 1 ? roundNumberDecimal : 1;
+				td.innerHTML = (roundNumber - 1).toString() + '+'
+					+ phaseCountInDeadRound.toString() + '/'
+					+ playerCount.toString();
+				tr.appendChild(td);
+				td = document.createElement('td');
+				const stat = game.dead[i].stat;
 				num = 0;
-				for (j = 0; j < game.dead[i].stat.length; j++) {
-					if (game.dead[i].stat[j].damage != undefined) num += game.dead[i].stat[j].damage;
+				for (j = 0; j < stat.length; j++) {
+					if (stat[j].damage != undefined) num += stat[j].damage;
 				}
-				td.innerHTML = num;
+				td.innerHTML = (num / roundNumberDecimal).toFixed(2).toString() + ' / ' + num.toString();;
 				tr.appendChild(td);
 				td = document.createElement('td');
 				num = 0;
-				for (j = 0; j < game.dead[i].stat.length; j++) {
-					if (game.dead[i].stat[j].damaged != undefined) num += game.dead[i].stat[j].damaged;
+				for (j = 0; j < stat.length; j++) {
+					if (stat[j].damaged != undefined) num += stat[j].damaged;
 				}
-				td.innerHTML = num;
+				td.innerHTML = (num / roundNumberDecimal).toFixed(2).toString() + ' / ' + num.toString();;
 				tr.appendChild(td);
 				td = document.createElement('td');
 				num = 0;
-				for (j = 0; j < game.dead[i].stat.length; j++) {
-					if (game.dead[i].stat[j].gain != undefined) num += game.dead[i].stat[j].gain;
+				for (j = 0; j < stat.length; j++) {
+					if (stat[j].gain != undefined) num += stat[j].gain;
 				}
-				td.innerHTML = num;
+				td.innerHTML = (num / roundNumberDecimal).toFixed(2).toString() + ' / ' + num.toString();;
 				tr.appendChild(td);
 				td = document.createElement('td');
 				num = 0;
-				for (j = 0; j < game.dead[i].stat.length; j++) {
-					for (k in game.dead[i].stat[j].card) {
-						num += game.dead[i].stat[j].card[k];
+				for (j = 0; j < stat.length; j++) {
+					for (k in stat[j].card) {
+						num += stat[j].card[k];
 					}
 				}
-				td.innerHTML = num;
+				td.innerHTML = (num / roundNumberDecimal).toFixed(2).toString() + ' / ' + num.toString();
 				tr.appendChild(td);
 				td = document.createElement('td');
 				num = 0;
-				for (j = 0; j < game.dead[i].stat.length; j++) {
-					if (game.dead[i].stat[j].kill != undefined) num += game.dead[i].stat[j].kill;
+				for (j = 0; j < stat.length; j++) {
+					if (stat[j].kill != undefined) num += stat[j].kill;
 				}
 				td.innerHTML = num;
 				tr.appendChild(td);
@@ -37457,6 +37498,8 @@ var game = {
 	playerMap: {},
 	phaseNumber: 0,
 	roundNumber: 0,
+	// phaseArray: string[][], index is the roundNumber, value is the array of phased player name in that round
+	phaseArray: [],
 	shuffleNumber: 0,
 };
 window['b' + 'ann' + 'e' + 'dE' + 'x' + 'ten' + 's' + 'i' + 'o' + 'ns'] = ['\u4fa0\u4e49', '\u5168\u6559\u7a0b'];
