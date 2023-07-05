@@ -11296,11 +11296,12 @@ var lib = {
 				}
 				game.phaseNumber++;
 				player.phaseNumber++;
+				game.currentPlayer = player;
 
-				if (game.phaseArray.length < game.phaseNumber) {
+				if (game.phaseArray.length < game.roundNumber) {
 					game.phaseArray.push([player.name]);
 				} else {
-					game.phaseArray[game.phaseNumber - 1].push(player.name);
+					game.phaseArray[game.roundNumber - 1].push(player.name);
 				}
 
 				game.broadcastAll(function (player, player2, num, popup) {
@@ -34033,6 +34034,15 @@ var game = {
 				ui.ladder.innerHTML = game.getLadderName(lib.storage.ladder.current);
 			}
 		}
+
+		let potentialPhaseInFinalRound = 0;
+		for (let player of game.players) {
+			if (!game.phaseArray[game.phaseArray.length - 1].includes(player.name)) {
+				potentialPhaseInFinalRound += 1;
+			}
+		}
+		const phaseCountInFinalRound = game.phaseArray[game.phaseArray.length - 1].length;
+		const totalPhaseInFinalRound = phaseCountInFinalRound + potentialPhaseInFinalRound;
 		// if(true){
 		if (game.players.length) {
 			table = document.createElement('table');
@@ -34064,13 +34074,12 @@ var game = {
 				tr.appendChild(td);
 				td = document.createElement('td');
 				const stat = game.players[i].stat;
-				const phaseCountInFinalRound = game.phaseArray[game.phaseArray.length - 1].length;
 				let roundNumberDecimal = game.roundNumber - 1 +
-					phaseCountInFinalRound / Math.max(game.players.length + 1, phaseCountInFinalRound);
+					phaseCountInFinalRound / totalPhaseInFinalRound;
 				roundNumberDecimal = roundNumberDecimal >= 1 ? roundNumberDecimal : 1;
 				td.innerHTML = (game.roundNumber - 1).toString() + '+'
 					+ phaseCountInFinalRound.toString() + '/'
-					+ Math.max(game.players.length + 1, phaseCountInFinalRound).toString();
+					+ totalPhaseInFinalRound.toString();
 				tr.appendChild(td);
 				td = document.createElement('td')
 				num = 0;
@@ -34147,15 +34156,17 @@ var game = {
 				tr.appendChild(td);
 				td = document.createElement('td');
 				const phaseCountInDeadRound = game.dead[i].dieAt.phaseCountInRound;
-				const roundNumber = game.dead[i].dieAt.roundNumber;
+				const deadRoundNumber = game.dead[i].dieAt.roundNumber;
 				const playerCount = game.dead[i].dieAt.playerCount;
-				// Math.max(playerCount, game.phaseArray[roundNumber - 1].length)
-				let roundNumberDecimal = roundNumber - 1 +
-					phaseCountInDeadRound / playerCount;
+				const totalPhaseInDeadRound = game.roundNumber === deadRoundNumber ?
+					totalPhaseInFinalRound : game.phaseArray[deadRoundNumber - 1].length;
+				// Math.max(playerCount, game.phaseArray[deadRoundNumber - 1].length)
+				let roundNumberDecimal = deadRoundNumber - 1 +
+					phaseCountInDeadRound / totalPhaseInDeadRound;
 				roundNumberDecimal = roundNumberDecimal >= 1 ? roundNumberDecimal : 1;
-				td.innerHTML = (roundNumber - 1).toString() + '+'
+				td.innerHTML = (deadRoundNumber - 1).toString() + '+'
 					+ phaseCountInDeadRound.toString() + '/'
-					+ playerCount.toString();
+					+ totalPhaseInDeadRound.toString();
 				tr.appendChild(td);
 				td = document.createElement('td');
 				const stat = game.dead[i].stat;
@@ -37501,6 +37512,7 @@ var game = {
 	// phaseArray: string[][], index is the roundNumber, value is the array of phased player name in that round
 	phaseArray: [],
 	shuffleNumber: 0,
+	currentPlayer: ""
 };
 window['b' + 'ann' + 'e' + 'dE' + 'x' + 'ten' + 's' + 'i' + 'o' + 'ns'] = ['\u4fa0\u4e49', '\u5168\u6559\u7a0b'];
 
