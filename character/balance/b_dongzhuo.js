@@ -9,7 +9,7 @@ import { _status } from '/game/game.js';
 
 const b_dongzhuo = {
   character: {
-    b_dongzhuo: ['male', 'qun', '6/7', ['b_baolian', 'b_jiuchi', 'b_benghuai', 'olbaonue'], ['zhu']],
+    b_dongzhuo: ['male', 'qun', '7/7', ['b_baolian', 'b_jiuchi', 'b_benghuai', 'olbaonue'], ['zhu']],
   },
   characterIntro: {},
   characterReplace: {
@@ -30,10 +30,11 @@ const b_dongzhuo = {
       },
       check: function (event, player) {
         // 1. Player has the lowest maxHp and runs out of marks, false
+
         const damageCount = game.countPlayer(function (current) {
           if (get.attitude(current, player) < 0 && current.countDiscardableCards(current, 'he') >= 2) return true;
         });
-        // 2. After damage, player is still healthy, true
+        // 2. After damage, player is still safe, true
         // 3. After damage, player is in danger but with sufficient [Peach] and [Liquor], true
 
         return false;
@@ -41,16 +42,16 @@ const b_dongzhuo = {
       content: function () {
         'step 0'
         if (player.hasMark('b_baolian')) {
-          player.chooseControl(['失去体力上限', '弃置标记']).set('ai', function () {
+          player.chooseControl(['失去体力', '弃置标记']).set('ai', function () {
             return 0;
           });
         } else {
-          player.loseMaxHp(true);
+          player.loseHp();
           event.goto(2);
         }
         'step 1'
-        if (result.control == '失去体力上限') {
-          player.loseMaxHp(true);
+        if (result.control == '失去体力') {
+          player.loseHp();
         } else if (result.control == '弃置标记') {
           player.removeMark('b_baolian', 1);
         }
@@ -59,7 +60,8 @@ const b_dongzhuo = {
           event.finish();
           return;
         }
-        target.line(player);
+        player.line(target);
+        target.animate('target');
         if (event.target.countCards('he') == 0) {
           player.draw();
           event.goto(4);
@@ -83,6 +85,7 @@ const b_dongzhuo = {
           if (event.target.ai.shown < player.ai.shown) {
             event.target.addExpose(0.1);
           }
+          event.target.line(player, { color: [255, 0, 0] });
           player.damage('nocard', event.target, 1);
         } else {
           player.gainPlayerCard(event.target, 'he', true);
@@ -159,7 +162,7 @@ const b_dongzhuo = {
       ai: {
         threaten: 1.6,
       },
-      group: ['b_jiuchi_recover', 'b_jiuchi_loseHp'],
+      group: ['b_jiuchi_recover', 'b_jiuchi_loseHp', 'b_jiuchi_removeMark'],
       subSkill: {
         recover: {
           trigger: { player: 'useCardToPlayered' },
@@ -191,6 +194,19 @@ const b_dongzhuo = {
             player.loseHp();
           }
         },
+        removeMark: {
+          shaRelated: true,
+          audio: 2,
+          trigger: { player: 'useCardAfter' },
+          forced: true,
+          silent: true,
+          filter: function (event, player) {
+            return event.card && event.card.name == 'sha' && player.countMark('b_jiuchi_loseHp') > 0;
+          },
+          content: function () {
+            player.removeMark('b_jiuchi_loseHp', player.countMark('b_jiuchi_loseHp'), true);
+          }
+        },
       }
     },
 
@@ -215,6 +231,8 @@ const b_dongzhuo = {
         "step 0"
         player.chooseControl('benghuai_hp', 'benghuai_maxHp', function (event, player) {
           if (player.hp == player.maxHp) return 'benghuai_hp';
+          // TODO: Adjust for balanced changes
+
           if (player.hp < player.maxHp - 1 || player.hp <= 2) return 'benghuai_maxHp';
           return 'benghuai_hp';
         }).set('prompt', '崩坏：失去1点体力或减1点体力上限');
@@ -236,7 +254,7 @@ const b_dongzhuo = {
     b_dongzhuo: '衡董卓',
     b_baolian: '暴敛',
     b_baolian_info: '①一名角色的回合结束时，若你本回合内造成伤害值与减少体力值之和大于等于2时，\
-    你获得一枚“暴”。②出牌阶段限一次，你可以弃置一枚“暴”或失去一点体力上限，令所有其他角色依次进行：\
+    你获得一枚“暴”。②出牌阶段限一次，你可以弃置一枚“暴”或失去一点体力，令所有其他角色依次进行：\
     若其没有牌，你摸一张牌；否则其需选择，弃置两张牌并对你造成1点伤害，或令你获得其一张牌。',
     b_jiuchi: '酒池',
     b_jiuchi_info: '你可以将一张黑桃牌当做【酒】使用。你使用带有【酒】效果的【杀】指定\
