@@ -2,12 +2,14 @@
 import { b_sunhao } from './b_sunhao.js';
 import { b_huangyueying } from './b_huangyueying.js';
 import { b_dongzhuo } from './b_dongzhuo.js';
+import { b_gongsunzan } from './b_gongsunzan.js';
 
 
 const characterObjArray = [
 	b_sunhao, 
 	b_huangyueying,
 	b_dongzhuo,
+	b_gongsunzan,
 ];
 
 const characterPackageData = {
