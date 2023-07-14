@@ -92,7 +92,6 @@ const b_sunhao = {
 		},
 	},
 	translate: {
-		"balance/index": '平衡',
 		b_sunhao: '衡孙皓',
 		b_canshi: '残蚀',
 		b_canshi2: '残蚀',
